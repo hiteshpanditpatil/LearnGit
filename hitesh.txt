@@ -1,0 +1,97 @@
+
+
+1 )
+How many startups are there in Pune City? 
+SELECT COUNT(*) AS num_startups
+FROM combinefile 
+WHERE city = 'Pune';
+
+
+2)How many startups in Pune got their Seed/ Angel Funding? 
+Select count(distinct Startup_Name) as No_of_Startup
+From combinefile 
+Where City = 'Pune'
+And Investors_Name in ('Seed' , 'Angel Funding')
+
+3)What is the total amount raised by startups in Pune City? Hint - use regex_replace to get rid of null/
+SELECT SUM(CAST(regexp_replace(Amount_in_USD, 'null', '0') AS DECIMAL)) AS total_amount_raised
+FROM combinefile 
+WHERE city = 'Pune';
+#OR
+SELECT SUM(COALESCE(Amount_in_USD, 0)) AS total_amount_raised  //use for first not null values
+FROM combinefile 
+WHERE city = 'Pune';
+#OR
+SELECT SUM(Amount_in_USD) AS total_amount_raised 
+FROM combinefile 
+WHERE city = 'Pune'
+AND amount_raised IS NOT NULL;
+
+4)What are the top 5 Industry_Vertical which has the highest number of startups in India?
+SELECT Industry_Vertical, COUNT(*) AS Startup_Count
+FROM combinefile CAST(... AS DECIMAL): After replacing 'null' with '0', this converts the resulting string into a decimal number. This is necessary because SUM works on numeric data, not strings.
+GROUP BY Industry_Vertical
+ORDER BY Startup_Count DESC
+LIMIT 5;
+
+5)/Find the top Investor(by amount) of each year./
+SELECT  year, Investors_Name, Amount
+FROM(
+    SELECT Year(Date)as year, Investors_Name, SUM(Amount_in_USD)as Amount, 
+    row_number() OVER (partition by Year(Date) Order BY SUM(Amount_in_USD) desc) as 'Rnk'
+    FROM combinefile 
+    Group by Year
+    )as Rnk
+  WHERE Rnk = 1 ; 
+  
+ 
+SELECT year, investor_name, total_amount
+FROM yearly_investments
+WHERE rnk = 1;
+
+
+SELECT YEAR(Date) AS Year,
+       Investors_Name AS Top_Investor,
+       MAX(Amount_in_USD) AS Amount_Invested
+FROM startup
+GROUP BY Year
+ORDER BY Year;
+
+
+
+bonus:
+
+7:
+  Find the top startup(by amount raised) from each city?/
+SELECT t.City, t.Startup_Name, t.Amount_in_USD
+FROM combinefile
+INNER JOIN (
+    SELECT City, MAX(Amount_in_USD) AS MaxAmount
+    FROM combinefile
+    GROUP BY City
+) AS max_amounts
+ON t.City = max_amounts.City 
+AND t.Amount_in_USD = max_amounts.MaxAmount;
+
+#OR
+SELECT t.City, t.Startup_Name, t.Amount_in_USD
+FROM combinefile
+WHERE t.Amount_in_USD = (
+    SELECT MAX(t2.Amount_in_USD)
+    FROM combinefile
+    WHERE t2.City = t.City
+);
+
+8)
+:
+Which SubVertical had the highest growth(in funding) over the years?/
+Select SubVertical, max(Amount_in_USD)  as Amount
+From combinefile
+group by SubVertical
+order by Amount desc
+limit 1
+
+
+
+
+	
